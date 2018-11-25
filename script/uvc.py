@@ -12,20 +12,20 @@ class uvc_image():
     def __init__(self):
         rospy.init_node('camera_save_node')
         rospy.on_shutdown(self.shutdown)
-        # transform ROS_image to opencv_image
+        # function of transform ROS_image to opencv_image
         self.bridge = CvBridge()
 
         # ROS callback function, receive /image_raw mesage
         rospy.Subscriber('/image_raw', Image, self.image_callback)
 
-        # prevents overwriting
+        # prevents overwriting for saved images in the past
         self.file_path = os.path.expanduser('~') + "/images/"
         file_list = os.listdir(self.file_path)
         numbers=[]
+
         if len(file_list) > 0:
             for i in file_list:
                 numbers.append(int(i[:-10]))
-
             self.group_number = max(numbers)+1
         else:
             self.group_number = 1
@@ -33,6 +33,7 @@ class uvc_image():
         self.seq = 1
         
     def image_callback(self, msg):
+        # transform ROS_image to opencv_image
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
@@ -50,6 +51,8 @@ class uvc_image():
 
             cv2.imshow("", self.cv_image)
             key = cv2.waitKey(1)
+
+            # save images
             if key == ord("s"):
                 rgb_name = self.file_path +"{0:05d}".format(self.group_number) +"_" \
                            +"{0:05d}".format(self.seq) +".jpg"
@@ -57,6 +60,7 @@ class uvc_image():
                 print(rgb_name, "is saved")
                 self.seq = self.seq +1
 
+            # next group_number
             if key == ord("n"):
                 self.group_number = self.group_number +1
                 print("move to the next group_number", self.group_number)
